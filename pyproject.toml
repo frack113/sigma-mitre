@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "sigma-mitre"
+version = "0.1.0"
+description = "Create MITRE heatmap from sigma rules tags"
+authors = ["frack113 <62423083+frack113@users.noreply.github.com>"]
+license = "LGPL-2.1-only"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+attackcti = "^0.4.0"
+pySigma = "^0.11.3"
+clic = "^0.1.3"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.1.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
