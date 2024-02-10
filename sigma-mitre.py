@@ -33,10 +33,15 @@ def create_heatmap(output_name:str,sigma_data: dict, color1: str, color2: str, c
     score_max = 0
     for name, data in sigma_data.items():
         if data["score"] > 0:
+            metadata = []
+            for rule in data["rules"]:
+                metadata.append({"name":rule.path.name,"value":str(rule)})
+
             item = {
                 "techniqueID": name,
                 "score": data["score"],
                 "comment": data["description"],
+                "metadata": metadata
             }
             score_max = max(score_max, data["score"])
             scores.append(item)
@@ -94,19 +99,13 @@ def create_heatmap(output_name:str,sigma_data: dict, color1: str, color2: str, c
     default="#ff6666ff",
     help="Max color '#RRGGBBAA'",
 )
-@click.option(
-    "--sigma-name",
-    "-n",
-    default=False,
-    help="Use sigma rule name instead of the MITRE description",
-)
 @click.argument(
     "input",
     nargs=-1,
     required=True,
     type=click.Path(exists=True, allow_dash=True, path_type=Path),
 )
-def main(input, output_name,force_update, color_min, color_middle, color_max,sigma_name):
+def main(input, output_name,force_update, color_min, color_middle, color_max):
     click.echo("Welcome to Sigma rule Heat Map creator")
 
     file_missing = False
@@ -129,7 +128,7 @@ def main(input, output_name,force_update, color_min, color_middle, color_max,sig
             if tag.namespace == "attack" and tag.name.startswith("t"):
                 if tag.name.upper() in sigma_data:
                     sigma_data[tag.name.upper()]["score"] += 1
-                    sigma_data[tag.name.upper()]["rules"].append(sigmaHQrule.name)
+                    sigma_data[tag.name.upper()]["rules"].append(sigmaHQrule.source)
                 else:
                     click.secho(
                         f"{sigmaHQrule.id} {sigmaHQrule.title} NOT FOUND {tag.name}",
