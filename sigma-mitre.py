@@ -15,7 +15,7 @@ def create_references_json():
 
     for technique in all_techniques:
         if not technique["revoked"]:
-            info = {"score": 0, "description": technique["description"],"rules":[]}
+            info = {"score": 0, "description": technique["description"], "rules": []}
             # find technique sigma tag
             for ref in technique["external_references"]:
                 if ref["source_name"] == "mitre-attack":
@@ -28,20 +28,28 @@ def create_references_json():
         f.write(json.dumps(data, indent=4, ensure_ascii=False))
 
 
-def create_heatmap(output_name:str,sigma_data: dict, color1: str, color2: str, color3: str):
+def create_heatmap(
+    output_name: str,
+    sigma_data: dict,
+    color1: str,
+    color2: str,
+    color3: str,
+    no_sigma_name: bool,
+    no_mitre_description: bool,
+):
     scores = []
     score_max = 0
     for name, data in sigma_data.items():
         if data["score"] > 0:
             metadata = []
             for rule in data["rules"]:
-                metadata.append({"name":rule.path.name,"value":str(rule)})
+                metadata.append({"name": rule.path.stem, "value": str(rule)})
 
             item = {
                 "techniqueID": name,
                 "score": data["score"],
-                "comment": data["description"],
-                "metadata": metadata
+                "comment": data["description"] if not no_mitre_description else "",
+                "metadata": metadata if not no_sigma_name else [],
             }
             score_max = max(score_max, data["score"])
             scores.append(item)
@@ -61,6 +69,7 @@ def create_heatmap(output_name:str,sigma_data: dict, color1: str, color2: str, c
 
     with open(output_name, "w", encoding="UTF-8") as f:
         f.write(json.dumps(output, indent=4, ensure_ascii=False))
+
 
 @click.command()
 @click.option(
@@ -94,10 +103,16 @@ def create_heatmap(output_name:str,sigma_data: dict, color1: str, color2: str, c
     help="Max color '#RRGGBBAA'",
 )
 @click.option(
-    "--color-max",
-    "-c3",
-    default="#ff6666ff",
-    help="Max color '#RRGGBBAA'",
+    "--no-sigma-name",
+    "-nn",
+    is_flag=True,
+    help="Do not put sigma rule name in the metadata",
+)
+@click.option(
+    "--no-mitre-description",
+    "-nm",
+    is_flag=True,
+    help="Do not put mitre description in comment",
 )
 @click.argument(
     "input",
@@ -105,7 +120,16 @@ def create_heatmap(output_name:str,sigma_data: dict, color1: str, color2: str, c
     required=True,
     type=click.Path(exists=True, allow_dash=True, path_type=Path),
 )
-def main(input, output_name,force_update, color_min, color_middle, color_max):
+def main(
+    input,
+    output_name,
+    force_update,
+    color_min,
+    color_middle,
+    color_max,
+    no_sigma_name,
+    no_mitre_description,
+):
     click.echo("Welcome to Sigma rule Heat Map creator")
 
     file_missing = False
@@ -136,7 +160,15 @@ def main(input, output_name,force_update, color_min, color_middle, color_max):
                         fg="red",
                     )
 
-    create_heatmap(output_name,sigma_data, color_min, color_middle, color_max)
+    create_heatmap(
+        output_name,
+        sigma_data,
+        color_min,
+        color_middle,
+        color_max,
+        no_sigma_name,
+        no_mitre_description,
+    )
 
 
 if __name__ == "__main__":
