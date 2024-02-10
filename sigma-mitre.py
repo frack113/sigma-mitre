@@ -15,7 +15,7 @@ def create_references_json():
 
     for technique in all_techniques:
         if not technique["revoked"]:
-            info = {"score": 0, "description": technique["description"]}
+            info = {"score": 0, "description": technique["description"],"rules":[]}
             # find technique sigma tag
             for ref in technique["external_references"]:
                 if ref["source_name"] == "mitre-attack":
@@ -28,7 +28,7 @@ def create_references_json():
         f.write(json.dumps(data, indent=4, ensure_ascii=False))
 
 
-def create_heatmap(sigma_data: dict, color1: str, color2: str, color3: str):
+def create_heatmap(output_name:str,sigma_data: dict, color1: str, color2: str, color3: str):
     scores = []
     score_max = 0
     for name, data in sigma_data.items():
@@ -54,15 +54,20 @@ def create_heatmap(sigma_data: dict, color1: str, color2: str, color3: str):
         "techniques": scores,
     }
 
-    with open("sigma_heatmap.json", "w", encoding="UTF-8") as f:
+    with open(output_name, "w", encoding="UTF-8") as f:
         f.write(json.dumps(output, indent=4, ensure_ascii=False))
-
 
 @click.command()
 @click.option(
+    "--output-name",
+    "-o",
+    default="sigma_heatmap.json",
+    help="Name of the HeatMap json file",
+)
+@click.option(
     "--force-update",
     "-f",
-    default=False,
+    is_flag=True,
     help="Force Internet MITRE update.",
 )
 @click.option(
@@ -83,13 +88,25 @@ def create_heatmap(sigma_data: dict, color1: str, color2: str, color3: str):
     default="#ff6666ff",
     help="Max color '#RRGGBBAA'",
 )
+@click.option(
+    "--color-max",
+    "-c3",
+    default="#ff6666ff",
+    help="Max color '#RRGGBBAA'",
+)
+@click.option(
+    "--sigma-name",
+    "-n",
+    default=False,
+    help="Use sigma rule name instead of the MITRE description",
+)
 @click.argument(
     "input",
     nargs=-1,
     required=True,
     type=click.Path(exists=True, allow_dash=True, path_type=Path),
 )
-def main(input, force_update, color_min, color_middle, color_max):
+def main(input, output_name,force_update, color_min, color_middle, color_max,sigma_name):
     click.echo("Welcome to Sigma rule Heat Map creator")
 
     file_missing = False
@@ -97,6 +114,7 @@ def main(input, force_update, color_min, color_middle, color_max):
         click.secho("Missing reference.json", err=True, fg="red")
         file_missing = True
     if file_missing or force_update:
+        click.echo("Update the MITRE reference")
         create_references_json()
 
     click.echo("Load local references")
@@ -111,6 +129,7 @@ def main(input, force_update, color_min, color_middle, color_max):
             if tag.namespace == "attack" and tag.name.startswith("t"):
                 if tag.name.upper() in sigma_data:
                     sigma_data[tag.name.upper()]["score"] += 1
+                    sigma_data[tag.name.upper()]["rules"].append(sigmaHQrule.name)
                 else:
                     click.secho(
                         f"{sigmaHQrule.id} {sigmaHQrule.title} NOT FOUND {tag.name}",
@@ -118,7 +137,7 @@ def main(input, force_update, color_min, color_middle, color_max):
                         fg="red",
                     )
 
-    create_heatmap(sigma_data, color_min, color_middle, color_max)
+    create_heatmap(output_name,sigma_data, color_min, color_middle, color_max)
 
 
 if __name__ == "__main__":
