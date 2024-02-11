@@ -8,8 +8,8 @@ Sigma2attack options:
 - [X] --rules-directory : Directory to read rules from
 - [X] --out-file : File to write the JSON layer to
 - [X] --no-comment : Don't store rule names in comments
-- [ ] --status-start : Check rule with minimun status
-- [ ] --status-end : Check rule with maximun status
+- [X] --status-start : Check rule with minimun status
+- [X] --status-end : Check rule with maximun status
 - [ ] --level-score : Score depand form rule level
 
 sigma-mitre options:
@@ -20,6 +20,8 @@ sigma-mitre options:
 - --color-max : Max color '#RRGGBBAA'
 - --no-sigma-name: Do not put sigma rule name in the metadata
 - --no-mitre-description: Do not put mitre description in comment
+- --status-min : Minimun status of a rule
+- --status-max : Maximun status of a rule
   
 Need the sigma rule folder as INPUT
 

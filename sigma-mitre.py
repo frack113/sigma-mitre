@@ -2,6 +2,7 @@ import click
 
 from attackcti import attack_client
 from sigma.collection import SigmaCollection
+from sigma.rule import SigmaStatus
 
 from pathlib import Path
 import json
@@ -114,6 +115,18 @@ def create_heatmap(
     is_flag=True,
     help="Do not put mitre description in comment",
 )
+@click.option(
+    "--status-min",
+    "-sn",
+    default="experimental",
+    help="Minimun status of a rule",
+)
+@click.option(
+    "--status-max",
+    "-sm",
+    default="stable",
+    help="Maximun status of a rule",
+)
 @click.argument(
     "input",
     nargs=-1,
@@ -129,8 +142,22 @@ def main(
     color_max,
     no_sigma_name,
     no_mitre_description,
+    status_min,
+    status_max
 ):
     click.echo("Welcome to Sigma rule Heat Map creator")
+
+    try:
+        s_status_min = SigmaStatus[status_min.upper()]
+    except KeyError:
+        click.secho(f"{status_min} is not a valid sigma status", err=True, fg="red")
+        exit()
+
+    try:
+        s_status_max = SigmaStatus[status_max.upper()]
+    except KeyError:
+        click.secho(f"{status_max} is not a valid sigma status", err=True, fg="red")
+        exit()
 
     file_missing = False
     if not Path("reference.json").exists():
@@ -148,17 +175,19 @@ def main(
     rule_paths = SigmaCollection.resolve_paths(input)
     rule_collection = SigmaCollection.load_ruleset(rule_paths, collect_errors=True)
     for sigmaHQrule in rule_collection:
-        for tag in sigmaHQrule.tags:
-            if tag.namespace == "attack" and tag.name.startswith("t"):
-                if tag.name.upper() in sigma_data:
-                    sigma_data[tag.name.upper()]["score"] += 1
-                    sigma_data[tag.name.upper()]["rules"].append(sigmaHQrule.source)
-                else:
-                    click.secho(
-                        f"{sigmaHQrule.id} {sigmaHQrule.title} NOT FOUND {tag.name}",
-                        err=True,
-                        fg="red",
-                    )
+        # Fun fact 
+        if sigmaHQrule.status.value >= s_status_min.value and sigmaHQrule.status.value <= s_status_max.value :
+            for tag in sigmaHQrule.tags:
+                if tag.namespace == "attack" and tag.name.startswith("t"):
+                    if tag.name.upper() in sigma_data:
+                        sigma_data[tag.name.upper()]["score"] += 1
+                        sigma_data[tag.name.upper()]["rules"].append(sigmaHQrule.source)
+                    else:
+                        click.secho(
+                            f"{sigmaHQrule.id} {sigmaHQrule.title} NOT FOUND {tag.name}",
+                            err=True,
+                            fg="red",
+                        )
 
     create_heatmap(
         output_name,
