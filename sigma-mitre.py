@@ -175,19 +175,19 @@ def main(
     rule_paths = SigmaCollection.resolve_paths(input)
     rule_collection = SigmaCollection.load_ruleset(rule_paths, collect_errors=True)
     for sigmaHQrule in rule_collection:
-        # Fun fact 
-        if sigmaHQrule.status.value >= s_status_min.value and sigmaHQrule.status.value <= s_status_max.value :
-            for tag in sigmaHQrule.tags:
-                if tag.namespace == "attack" and tag.name.startswith("t"):
-                    if tag.name.upper() in sigma_data:
-                        sigma_data[tag.name.upper()]["score"] += 1
-                        sigma_data[tag.name.upper()]["rules"].append(sigmaHQrule.source)
-                    else:
-                        click.secho(
-                            f"{sigmaHQrule.id} {sigmaHQrule.title} NOT FOUND {tag.name}",
-                            err=True,
-                            fg="red",
-                        )
+        # Fun fact need to fix pysigma order first
+        #if sigmaHQrule.status.value >= s_status_min.value and sigmaHQrule.status.value <= s_status_max.value :
+        for tag in sigmaHQrule.tags:
+            if tag.namespace == "attack" and tag.name.startswith("t"):
+                if tag.name.upper() in sigma_data:
+                    sigma_data[tag.name.upper()]["score"] += 1
+                    sigma_data[tag.name.upper()]["rules"].append(sigmaHQrule.source)
+                else:
+                    click.secho(
+                        f"{sigmaHQrule.id} {sigmaHQrule.title} NOT FOUND {tag.name}",
+                        err=True,
+                        fg="red",
+                    )
 
     create_heatmap(
         output_name,
