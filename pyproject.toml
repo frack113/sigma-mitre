@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sigma-mitre"
-version = "0.2.0"
+version = "0.2.1"
 description = "Create MITRE heatmap from sigma rules tags"
 authors = ["frack113 <62423083+frack113@users.noreply.github.com>"]
 license = "LGPL-2.1-only"
